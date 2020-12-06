@@ -1,0 +1,106 @@
+{
+  "project_info": {
+    "project_number": "802768191850",
+    "firebase_url": "https://bee-pos.firebaseio.com",
+    "project_id": "bee-pos",
+    "storage_bucket": "bee-pos.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:802768191850:android:25a54a3b1ffd5ddee72513",
+        "android_client_info": {
+          "package_name": "com.beepos"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "802768191850-dm1k1j3hknkqf7d37jqviug83cu4l7j7.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDFF_fBI48x243Gg4ImIMYhIiRRaM_UeVU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "802768191850-dm1k1j3hknkqf7d37jqviug83cu4l7j7.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:802768191850:android:a7dd475a0c0c138ee72513",
+        "android_client_info": {
+          "package_name": "com.hellopos"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "802768191850-mo9p6arikhoe4labsblvikah8rk9r2gq.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.hellopos",
+            "certificate_hash": "5e8f16062ea3cd2c4a0d547876baa6f38cabf625"
+          }
+        },
+        {
+          "client_id": "802768191850-dm1k1j3hknkqf7d37jqviug83cu4l7j7.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDFF_fBI48x243Gg4ImIMYhIiRRaM_UeVU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "802768191850-dm1k1j3hknkqf7d37jqviug83cu4l7j7.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:802768191850:android:9634ad77653f33ace72513",
+        "android_client_info": {
+          "package_name": "vn.beepos.dev"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "802768191850-dm1k1j3hknkqf7d37jqviug83cu4l7j7.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDFF_fBI48x243Gg4ImIMYhIiRRaM_UeVU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "802768191850-dm1k1j3hknkqf7d37jqviug83cu4l7j7.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
