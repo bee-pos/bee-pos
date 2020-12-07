@@ -1,4 +1,3 @@
-import auth from '@react-native-firebase/auth';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import React, { useRef, useState } from 'react';
@@ -7,18 +6,25 @@ import FlashMessage from "react-native-flash-message";
 import PhoneSignIn from './screens/phone-sign-in';
 import PhoneSignUp from './screens/phone-sign-up';
 import SplashScreen from './screens/splash';
+import Home from './screens/home';
 import Colors from './utils/colors';
 import Variables from './utils/variables';
+import auth from '@react-native-firebase/auth';
+import firebase from '@react-native-firebase/app';
 
 _setupDefaultTextStyle();
+auth().setLanguageCode('vi');
 const Stack = createStackNavigator();
 
 const App = () => {
-    const PropsPhoneSignUp = (props) => <PhoneSignUp {...props} onSignUp={onSignUp} />
-    const PropsPhoneSignIn = (props) => <PhoneSignIn {...props} onSignIn={onSignIn} />
+    const OTPPhoneSignUp = (props) => <PhoneSignUp {...props} onSignedUp={onSignedUp} />
+    const OTPPhoneSignIn = (props) => <PhoneSignIn {...props} onSignedIn={onSignedIn} otpAuthentication={otpAuthentication} />
 
-    const authentication = useRef();
+    const navigationRef = useRef();
+
     const [settingUp, setSettingUp] = useState(true);
+    const [otpAuthentication, setOtpAuthentication] = useState();
+    const [user, setUser] = useState();
 
     setup();
 
@@ -27,10 +33,18 @@ const App = () => {
             <StatusBar barStyle="light-content" />
             <SafeAreaView style={styles.container}>
                 {settingUp ? <SplashScreen /> :
-                    <NavigationContainer>
+                    <NavigationContainer ref={navigationRef}>
                         <Stack.Navigator>
-                            <Stack.Screen options={{ headerShown: false }} name="PhoneSignUp" component={PropsPhoneSignUp} />
-                            <Stack.Screen options={{ title: '' }} name="PhoneSignIn" component={PropsPhoneSignIn} />
+                            {user ? (
+                                <>
+                                    <Stack.Screen options={{ headerShown: false }} name="Home" component={Home} />
+                                </>
+                            ) : (
+                                <>
+                                    <Stack.Screen options={{ headerShown: false }} name="PhoneSignUp" component={OTPPhoneSignUp} />
+                                    <Stack.Screen options={{ title: '' }} name="PhoneSignIn" component={OTPPhoneSignIn} />
+                                </>
+                            )}
                         </Stack.Navigator>
                     </NavigationContainer>}
             </SafeAreaView>
@@ -44,17 +58,13 @@ const App = () => {
         }, 3000);
     }
 
-    function onSignUp(phone) {
-        return auth().signInWithPhoneNumber(phone)
-            .then((otpAuthentication) => {
-                authentication.current = otpAuthentication;
-                return true;
-            })
-            .catch((error) => false);
+    function onSignedUp(phone, otpAuthentication) {
+        setOtpAuthentication(otpAuthentication);
+        navigationRef.current?.navigate('PhoneSignIn', { phone });
     }
 
-    function onSignIn(code) {
-        return authentication.current.confirm(code);
+    function onSignedIn({ user, isNewUser }) {
+        setUser(user);
     }
 };
 

@@ -1,16 +1,17 @@
+import auth from '@react-native-firebase/auth';
 import React, { useRef } from 'react';
 import { Image, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { showMessage } from "react-native-flash-message";
 import Icon from 'react-native-vector-icons/Ionicons';
 import Flag from '../../assets/flag-vn.png';
 import HeaderLogo from '../../assets/header-logo.png';
 import Colors from '../utils/colors';
 import Styles from '../utils/styles';
 import Variables from '../utils/variables';
-import { showMessage, hideMessage } from "react-native-flash-message";
 
-const PhoneSignUp = ({ navigation, onSignUp }) => {
+const PhoneSignUp = ({ onSignedUp }) => {
     const PHONE_PREFIX = '+84';
-    const phone = useRef('+84363514804');
+    const phone = useRef();
 
     return (
         <View style={styles.container}>
@@ -30,28 +31,30 @@ const PhoneSignUp = ({ navigation, onSignUp }) => {
             </View>
             <View style={styles.footer}>
                 <TouchableOpacity style={[Styles.cirle, Styles['icon-button']]} onPress={signUp} >
-                    <Icon name="arrow-forward-outline" size={Variables.largeFontSize} color={Colors.white} />
+                    <Icon name='arrow-forward-outline' size={Variables.largeFontSize} color={Colors.white} />
                 </TouchableOpacity>
             </View>
         </View>
     )
 
-    function onPhoneChanged(input) {
-        phone.current = input;
+    function onPhoneChanged(value) {
+        phone.current = `${PHONE_PREFIX}${value}`;
     }
 
     async function signUp() {
-        const signedUp = await onSignUp(phone.current);
-        if (signedUp) {
-            navigation.navigate('PhoneSignIn');
-            return;
+        phone.current = '+84363514804';
+        try {
+            const otpAuthentication = await _firebasePhoneSignUp(phone.current);
+            onSignedUp(phone.current, otpAuthentication);
+        } catch (error) {
+            console.log(error);
+            showMessage({ message: 'Lỗi', description: 'Đã có lỗi xảy ra, vui lòng thử lại', type: 'error' });
         }
+    }
 
-        showMessage({
-            message: "Lỗi",
-            description: "Đã có lỗi xảy ra, vui lòng thử lại.",
-            type: "error",
-        });
+    function _firebasePhoneSignUp(phone) {
+        return auth().signInWithPhoneNumber(phone)
+            .then(otpAuthentication => otpAuthentication);
     }
 };
 

@@ -1,25 +1,25 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { showMessage } from 'react-native-flash-message';
 import Spinner from 'react-native-loading-spinner-overlay';
 import Icon from 'react-native-vector-icons/Ionicons';
 import CoundownTimer from '../components/countdown-timer';
 import Colors from '../utils/colors';
 import Styles from '../utils/styles';
 import Variables from '../utils/variables';
-import { showMessage, hideMessage } from "react-native-flash-message";
 
-const PhoneSignIn = ({ navigation, onSignIn }) => {
+const PhoneSignIn = ({ route: { params: { phone } }, otpAuthentication, onSignedIn }) => {
     const OTP_EXPIRED_SECONDS = 300;
     const ENABLE_RESEND_SECONDS = 0;
 
     const otpCode = useRef();
     const coundownTimerRef = useRef();
-    const enableResendIntervalRef = useRef();
+    const resendIntervalRef = useRef();
 
     const [spinning, showSpinner] = useState(false);
     const [disableResend, setDisableResend] = useState(true);
 
-    useEffect(setupEnableResendTimer, []);
+    useEffect(setupResendTimer, []);
 
     return (
         <>
@@ -28,11 +28,12 @@ const PhoneSignIn = ({ navigation, onSignIn }) => {
                 <View style={styles.body}>
                     <Text style={styles['confirmed-text']}>Xác nhận</Text>
                     <Text>{`Nhập 6 ký tự được gửi tới số `}</Text>
-                    <Text style={styles['phone-text']}>+84 363514804</Text>
+                    <Text style={styles['phone-text']}>{phone}</Text>
                     <TextInput style={styles['phone-input']} autoFocus={true} onChangeText={onOtpCodeChanged}
                         clearButtonMode='always' keyboardType='numeric' placeholder='000000'
                         maxLength={6} textAlign='left' />
-                    <CoundownTimer ref={coundownTimerRef} message='Thời gian còn lại' seconds={OTP_EXPIRED_SECONDS} onTimeout={onOtpCodeExpired} />
+                    <CoundownTimer ref={coundownTimerRef} message='Thời gian còn lại'
+                        seconds={OTP_EXPIRED_SECONDS} onTimeout={onOtpCodeExpired} />
                 </View>
                 <View style={styles.footer}>
                     <View>
@@ -44,7 +45,7 @@ const PhoneSignIn = ({ navigation, onSignIn }) => {
                         </TouchableOpacity>
                     </View>
                     <TouchableOpacity style={[Styles.cirle, Styles['icon-button']]} onPress={signIn} >
-                        <Icon name="arrow-forward-outline" size={Variables.largeFontSize} color={Colors.white} />
+                        <Icon name='arrow-forward-outline' size={Variables.largeFontSize} color={Colors.white} />
                     </TouchableOpacity>
                 </View>
             </View>
@@ -61,46 +62,48 @@ const PhoneSignIn = ({ navigation, onSignIn }) => {
 
     async function signIn() {
         try {
-            console.log(await onSignIn(otpCode.current));
+            const { additionalUserInfo: { isNewUser }, user } = await _firebasePhoneSignIn(otpCode.current);
+            onSignedIn({ user, isNewUser });
         } catch (error) {
-            showMessage({
-                message: "Xác thực OTP",
-                description: "Mã OTP không chính xác.",
-                type: "error",
-            });
+            console.log(error);
+            showMessage({ message: 'Xác thực OTP', description: 'Mã OTP không chính xác', type: 'error' });
         }
+    }
+
+    function _firebasePhoneSignIn(code) {
+        return otpAuthentication.confirm(code);
     }
 
     function resend() {
         setDisableResend(true);
-        resetEnableResendTimer();
+        resetResendTimer();
         coundownTimerRef.current.onReset();
         showMessage({
-            message: "OTP",
-            description: "Mã OTP đã được gửi lại",
-            type: "success",
+            message: 'Xác thực OTP',
+            description: 'Mã OTP đã được gửi lại',
+            type: 'success',
         });
     }
 
-    function setupEnableResendTimer() {
-        _openEnableResendTimer();
-        return _closeEnableResendTimer;
+    function setupResendTimer() {
+        _startResendTimer();
+        return _closeResendTimer;
     }
 
-    function resetEnableResendTimer() {
-        _closeEnableResendTimer();
-        _openEnableResendTimer();
+    function resetResendTimer() {
+        _closeResendTimer();
+        _startResendTimer();
     }
 
-    function _openEnableResendTimer() {
-        enableResendIntervalRef.current = setInterval(() => {
+    function _startResendTimer() {
+        resendIntervalRef.current = setInterval(() => {
             setDisableResend(false);
-            _closeEnableResendTimer();
+            _closeResendTimer();
         }, ENABLE_RESEND_SECONDS * 1000);
     }
 
-    function _closeEnableResendTimer() {
-        clearInterval(enableResendIntervalRef.current);
+    function _closeResendTimer() {
+        clearInterval(resendIntervalRef.current);
     }
 };
 
