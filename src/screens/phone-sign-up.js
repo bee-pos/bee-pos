@@ -47,8 +47,26 @@ const PhoneSignUp = ({ onSignedUp }) => {
             const otpAuthentication = await _firebasePhoneSignUp(phone.current);
             onSignedUp(phone.current, otpAuthentication);
         } catch (error) {
-            console.log(error);
-            showMessage({ message: 'Lỗi', description: 'Đã có lỗi xảy ra, vui lòng thử lại', type: 'error' });
+            switch (error.code) {
+                case 'auth/missing-phone-number':
+                    showMessage({ message: 'Bạn chưa nhập số điện thoại', type: 'danger' });
+                    break;
+                case 'auth/invalid-phone-number':
+                    showMessage({ message: 'Nhập vào số điện thoại không đúng', type: 'danger' });
+                    break;
+                case 'auth/user-disabled':
+                    showMessage({ message: 'Tài khoản tạm thời vô hiệu', type: 'danger' });
+                    break;
+                case 'auth/too-many-requests':
+                    showMessage({ message: 'Tài khoản tạm khóa', description: 'Bạn đã gửi quá nhiều yêu cầu trong thời gian ngắn', type: 'danger' });
+                    break;
+                case 'auth/captcha-check-failed':
+                case 'auth/quota-exceeded':
+                case 'auth/operation-not-allowed':
+                default:
+                    console.log(error);
+                    showMessage({ message: 'Đã có lỗi xảy ra', type: 'danger' });
+            }
         }
     }
 
@@ -60,7 +78,8 @@ const PhoneSignUp = ({ onSignedUp }) => {
 
 const styles = StyleSheet.create({
     container: {
-        flex: 1
+        flex: 1,
+        backgroundColor: Colors.white
     },
     header: {
         height: 80,

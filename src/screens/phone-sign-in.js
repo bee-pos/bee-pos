@@ -1,3 +1,4 @@
+import auth from '@react-native-firebase/auth';
 import React, { useEffect, useRef, useState } from 'react';
 import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { showMessage } from 'react-native-flash-message';
@@ -8,18 +9,19 @@ import Colors from '../utils/colors';
 import Styles from '../utils/styles';
 import Variables from '../utils/variables';
 
-const PhoneSignIn = ({ route: { params: { phone } }, otpAuthentication, onSignedIn }) => {
-    const OTP_EXPIRED_SECONDS = 300;
-    const ENABLE_RESEND_SECONDS = 0;
+const PhoneSignIn = ({ route: { params: { phone } }, otpAuthentication, onOtpResent, onSignedIn }) => {
+    const OTP_EXPIRED_SECONDS = 60;
+    const ENABLE_RESEND_SECONDS = 15;
 
     const otpCode = useRef();
     const coundownTimerRef = useRef();
-    const resendIntervalRef = useRef();
+    const enableResendIntervalRef = useRef();
 
+    const [otpConfirmation, setOtpConfirmation] = useState(otpAuthentication);
     const [spinning, showSpinner] = useState(false);
-    const [disableResend, setDisableResend] = useState(true);
+    const [disallowResend, setDisallowResend] = useState(true);
 
-    useEffect(setupResendTimer, []);
+    useEffect(setupEnableResendTimer, []);
 
     return (
         <>
@@ -38,13 +40,13 @@ const PhoneSignIn = ({ route: { params: { phone } }, otpAuthentication, onSigned
                 <View style={styles.footer}>
                     <View>
                         <Text>Bạn không nhận được mã kích hoạt?</Text>
-                        <TouchableOpacity disabled={disableResend} onPress={resend} >
-                            <Text style={[styles['re-send-btn'], disableResend ? styles['re-send-btn--disabled'] : '']} >
+                        <TouchableOpacity disabled={disallowResend} onPress={resendOtpCode} >
+                            <Text style={[styles['re-send-btn'], disallowResend ? styles['re-send-btn--disabled'] : '']} >
                                 Gửi lại mã kích hoạt
                         </Text>
                         </TouchableOpacity>
                     </View>
-                    <TouchableOpacity style={[Styles.cirle, Styles['icon-button']]} onPress={signIn} >
+                    <TouchableOpacity style={[Styles.cirle, Styles['icon-button']]} onPress={signInByOtpCode} >
                         <Icon name='arrow-forward-outline' size={Variables.largeFontSize} color={Colors.white} />
                     </TouchableOpacity>
                 </View>
@@ -57,59 +59,92 @@ const PhoneSignIn = ({ route: { params: { phone } }, otpAuthentication, onSigned
     }
 
     function onOtpCodeExpired() {
-        setDisableResend(false);
+        setDisallowResend(false);
     }
 
-    async function signIn() {
+    async function signInByOtpCode() {
         try {
             const { additionalUserInfo: { isNewUser }, user } = await _firebasePhoneSignIn(otpCode.current);
             onSignedIn({ user, isNewUser });
         } catch (error) {
-            console.log(error);
-            showMessage({ message: 'Xác thực OTP', description: 'Mã OTP không chính xác', type: 'error' });
+            switch (error.code) {
+                case 'auth/missing-verification-code':
+                    showMessage({ message: 'Bạn chưa nhập vào mã OTP', type: 'danger' });
+                    break;
+                case 'auth/invalid-verification-code':
+                    showMessage({ message: 'Mã OTP không chính xác', type: 'danger' });
+                    break;
+                case 'auth/session-expired':
+                    showMessage({ message: 'Mã OTP đã hết hạn', type: 'danger' });
+                    break;
+                default:
+                    console.log(error);
+                    showMessage({ message: 'Đã có lỗi xảy ra', type: 'danger' });
+            }
         }
     }
 
-    function _firebasePhoneSignIn(code) {
-        return otpAuthentication.confirm(code);
+    async function resendOtpCode() {
+        setDisallowResend(true);
+
+        try {
+            const otpConfirmation = await _firebasePhoneSignUp(phone);
+            setOtpConfirmation(otpConfirmation);
+
+            closeCurrentEnableResendTimer();
+            createEnableResendTimer();
+
+            coundownTimerRef.current.onReset();
+        } catch (error) {
+            switch (error.code) {
+                case 'auth/user-disabled':
+                    showMessage({ message: 'Tài khoản tạm thời vô hiệu', type: 'danger' });
+                    break;
+                case 'auth/too-many-requests':
+                    showMessage({ message: 'Tài khoản tạm khóa', description: 'Bạn đã gửi quá nhiều yêu cầu trong thời gian ngắn', type: 'danger' });
+                    break;
+                case 'auth/missing-phone-number':
+                case 'auth/invalid-phone-number':
+                case 'auth/captcha-check-failed':
+                case 'auth/quota-exceeded':
+                case 'auth/operation-not-allowed':
+                default:
+                    console.log(error);
+                    showMessage({ message: 'Đã có lỗi xảy ra', type: 'danger' });
+            }
+        }
     }
 
-    function resend() {
-        setDisableResend(true);
-        resetResendTimer();
-        coundownTimerRef.current.onReset();
-        showMessage({
-            message: 'Xác thực OTP',
-            description: 'Mã OTP đã được gửi lại',
-            type: 'success',
-        });
+    function setupEnableResendTimer() {
+        createEnableResendTimer();
+        return closeCurrentEnableResendTimer;
     }
 
-    function setupResendTimer() {
-        _startResendTimer();
-        return _closeResendTimer;
-    }
-
-    function resetResendTimer() {
-        _closeResendTimer();
-        _startResendTimer();
-    }
-
-    function _startResendTimer() {
-        resendIntervalRef.current = setInterval(() => {
-            setDisableResend(false);
-            _closeResendTimer();
+    function createEnableResendTimer() {
+        enableResendIntervalRef.current = setInterval(() => {
+            setDisallowResend(false);
+            closeCurrentEnableResendTimer();
         }, ENABLE_RESEND_SECONDS * 1000);
     }
 
-    function _closeResendTimer() {
-        clearInterval(resendIntervalRef.current);
+    function closeCurrentEnableResendTimer() {
+        clearInterval(enableResendIntervalRef.current);
+    }
+
+    function _firebasePhoneSignIn(code) {
+        return otpConfirmation.confirm(code);
+    }
+
+    function _firebasePhoneSignUp(phone) {
+        return auth().signInWithPhoneNumber(phone)
+            .then(otpConfirmation => setOtpConfirmation(otpConfirmation));
     }
 };
 
 const styles = StyleSheet.create({
     container: {
-        flex: 1
+        flex: 1,
+        backgroundColor: Colors.white
     },
     body: {
         flex: 1,

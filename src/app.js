@@ -3,17 +3,14 @@ import { createStackNavigator } from '@react-navigation/stack';
 import React, { useRef, useState } from 'react';
 import { SafeAreaView, StatusBar, StyleSheet, Text } from 'react-native';
 import FlashMessage from "react-native-flash-message";
+import Home from './screens/home';
 import PhoneSignIn from './screens/phone-sign-in';
 import PhoneSignUp from './screens/phone-sign-up';
 import SplashScreen from './screens/splash';
-import Home from './screens/home';
 import Colors from './utils/colors';
 import Variables from './utils/variables';
-import auth from '@react-native-firebase/auth';
-import firebase from '@react-native-firebase/app';
 
 _setupDefaultTextStyle();
-auth().setLanguageCode('vi');
 const Stack = createStackNavigator();
 
 const App = () => {
@@ -48,7 +45,7 @@ const App = () => {
                         </Stack.Navigator>
                     </NavigationContainer>}
             </SafeAreaView>
-            <FlashMessage position="top" style={styles['flash-message']} />
+            <FlashMessage position="top" duration={3000} titleStyle={{ fontWeight: 'bold' }} />
         </>
     );
 
@@ -81,9 +78,6 @@ function _setupDefaultTextStyle() {
 const styles = StyleSheet.create({
     container: {
         flex: 1
-    },
-    'flash-message': {
-        backgroundColor: Colors.styledColor
     }
 });
 
