@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 const AnimatedTextEllipsis = ({ text = '', count = 3, delay = 1000, style = {}, textStyle = {} }) => {
-    const ellipsisCountRef = useRef(0);
+    const ellipsisCountRef = useRef(count);
     const [ellipsisCount, setEllipsisCount] = useState(ellipsisCountRef.current);
 
     useEffect(() => {
