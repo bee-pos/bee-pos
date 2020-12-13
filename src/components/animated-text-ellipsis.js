@@ -3,12 +3,12 @@ import { StyleSheet, Text, View } from 'react-native';
 
 const AnimatedTextEllipsis = ({ text = '', count = 3, delay = 1000, style = {}, textStyle = {} }) => {
     const ellipsisCountRef = useRef(count);
-    const [showingEllipsisCount, setShowingEllipsisCount] = useState(ellipsisCountRef.current);
+    const [ellipsisCount, setEllipsisCount] = useState(ellipsisCountRef.current);
 
     useEffect(() => {
         const syncEllipsisInterval = setInterval(() => {
             ellipsisCountRef.current = ellipsisCountRef.current < count ? (++ellipsisCountRef.current) : 0
-            setShowingEllipsisCount(ellipsisCountRef.current);
+            setEllipsisCount(ellipsisCountRef.current);
         }, delay);
 
         return () => clearInterval(syncEllipsisInterval);
@@ -18,7 +18,7 @@ const AnimatedTextEllipsis = ({ text = '', count = 3, delay = 1000, style = {}, 
         <View style={{ ...style, ...styles.container }}>
             <Text style={{ ...textStyle }}>{`${text}`}</Text>
             {Array(count).fill().map((_, i) =>
-                <Text key={i} style={(i + 1) > showingEllipsisCount ? { ...textStyle, opacity: 0 } : { ...textStyle }}>.</Text>)}
+                <Text key={i} style={(i + 1) > ellipsisCount ? { ...textStyle, opacity: 0 } : { ...textStyle }}>.</Text>)}
         </View>
     );
 };
