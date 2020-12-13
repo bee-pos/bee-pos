@@ -1,17 +1,34 @@
-import auth from '@react-native-firebase/auth';
-import React, { useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Image, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { showMessage } from "react-native-flash-message";
+import { getCountry } from "react-native-localize";
 import Icon from 'react-native-vector-icons/Ionicons';
-import Flag from '../../assets/flag-vn.png';
 import HeaderLogo from '../../assets/header-logo.png';
 import Colors from '../utils/colors';
+import countryDialCodes from '../utils/country-dial-codes';
+import { firebasePhoneSignUp } from '../utils/firebase-utils';
+import { hideSpinner, showSpinner } from '../utils/spinner/spinner-utils';
 import Styles from '../utils/styles';
 import Variables from '../utils/variables';
 
 const PhoneSignUp = ({ onSignedUp }) => {
-    const PHONE_PREFIX = '+84';
+    const DEFAULT_COUNTRY_DIAL_CODE = {
+        name: "Vietnam",
+        dialCode: "+84",
+        countryCode: "VN",
+        flag: require('../../assets/flags/vn.png')
+    };
+
+    const [countryDialCode, setDialCode] = useState(DEFAULT_COUNTRY_DIAL_CODE);
     const phone = useRef();
+
+    useEffect(() => {
+        const countryCode = getCountry();
+        const countryDialCode = countryDialCodes.find(code => code.countryCode === countryCode);
+        if (countryDialCode) {
+            setDialCode(countryDialCode);
+        }
+    }, []);
 
     return (
         <View style={styles.container}>
@@ -22,11 +39,11 @@ const PhoneSignUp = ({ onSignedUp }) => {
                 <Text style={styles['welcome-text']}>Xin chào</Text>
                 <Text style={styles['sign-in-text']}>Bạn đã sẵn sàng chưa, nhập số điện thoại để đăng nhập</Text>
                 <View style={styles['phone-input-container']}>
-                    <Image source={Flag} />
-                    <Text style={styles['phone-input-container__prefix']}>{PHONE_PREFIX}</Text>
+                    <Image source={countryDialCode.flag} />
+                    <Text style={styles['phone-input-container__prefix']}>{countryDialCode.dialCode}</Text>
                     <TextInput style={styles['phone-input-container__input']} onChangeText={onPhoneChanged}
                         maxLength={11} autoFocus={true} clearButtonMode='always' keyboardType='numeric'
-                        placeholder='Số điện thoại' value={phone.current} />
+                        placeholder='Số điện thoại' />
                 </View>
             </View>
             <View style={styles.footer}>
@@ -38,13 +55,14 @@ const PhoneSignUp = ({ onSignedUp }) => {
     )
 
     function onPhoneChanged(value) {
-        phone.current = `${PHONE_PREFIX}${value}`;
+        phone.current = `${countryDialCode.dialCode}${value}`;
     }
 
     async function signUp() {
-        phone.current = '+84363514804';
+        showSpinner();
+
         try {
-            const otpAuthentication = await _firebasePhoneSignUp(phone.current);
+            const otpAuthentication = await firebasePhoneSignUp(phone.current);
             onSignedUp(phone.current, otpAuthentication);
         } catch (error) {
             switch (error.code) {
@@ -67,12 +85,9 @@ const PhoneSignUp = ({ onSignedUp }) => {
                     console.log(error);
                     showMessage({ message: 'Đã có lỗi xảy ra', type: 'danger' });
             }
+        } finally {
+            hideSpinner();
         }
-    }
-
-    function _firebasePhoneSignUp(phone) {
-        return auth().signInWithPhoneNumber(phone)
-            .then(otpAuthentication => otpAuthentication);
     }
 };
 

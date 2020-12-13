@@ -1,32 +1,26 @@
-import auth from '@react-native-firebase/auth';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { showMessage } from 'react-native-flash-message';
-import Spinner from 'react-native-loading-spinner-overlay';
 import Icon from 'react-native-vector-icons/Ionicons';
 import CoundownTimer from '../components/countdown-timer';
 import Colors from '../utils/colors';
+import { firebasePhoneSignIn, firebasePhoneSignUp } from '../utils/firebase-utils';
+import { hideSpinner, showSpinner } from '../utils/spinner/spinner-utils';
 import Styles from '../utils/styles';
 import Variables from '../utils/variables';
 
-const PhoneSignIn = ({ route: { params: { phone } }, otpAuthentication, onOtpResent, onSignedIn }) => {
+const PhoneSignIn = ({ route: { params: { phone } }, otpAuthentication, onSignedIn }) => {
     const OTP_EXPIRED_SECONDS = 60;
-    const ENABLE_RESEND_SECONDS = 15;
 
     const otpCode = useRef();
     const coundownTimerRef = useRef();
-    const enableResendIntervalRef = useRef();
 
     const [otpConfirmation, setOtpConfirmation] = useState(otpAuthentication);
-    const [spinning, showSpinner] = useState(false);
     const [disallowResend, setDisallowResend] = useState(true);
-
-    useEffect(setupEnableResendTimer, []);
 
     return (
         <>
             <View style={styles.container}>
-                <Spinner visible={spinning} size="large" color={Colors.styledColor} />
                 <View style={styles.body}>
                     <Text style={styles['confirmed-text']}>Xác nhận</Text>
                     <Text>{`Nhập 6 ký tự được gửi tới số `}</Text>
@@ -63,8 +57,11 @@ const PhoneSignIn = ({ route: { params: { phone } }, otpAuthentication, onOtpRes
     }
 
     async function signInByOtpCode() {
+        showSpinner();
+
         try {
-            const { additionalUserInfo: { isNewUser }, user } = await _firebasePhoneSignIn(otpCode.current);
+            const { additionalUserInfo: { isNewUser }, user } =
+                await firebasePhoneSignIn(otpConfirmation, otpCode.current);
             onSignedIn({ user, isNewUser });
         } catch (error) {
             switch (error.code) {
@@ -81,20 +78,21 @@ const PhoneSignIn = ({ route: { params: { phone } }, otpAuthentication, onOtpRes
                     console.log(error);
                     showMessage({ message: 'Đã có lỗi xảy ra', type: 'danger' });
             }
+        } finally {
+            hideSpinner();
         }
     }
 
     async function resendOtpCode() {
         setDisallowResend(true);
+        showSpinner();
 
         try {
-            const otpConfirmation = await _firebasePhoneSignUp(phone);
+            const otpConfirmation = await firebasePhoneSignUp(phone);
             setOtpConfirmation(otpConfirmation);
 
-            closeCurrentEnableResendTimer();
-            createEnableResendTimer();
-
             coundownTimerRef.current.onReset();
+            showMessage({ message: 'Mã OTP đã được gửi lại', type: 'success' });
         } catch (error) {
             switch (error.code) {
                 case 'auth/user-disabled':
@@ -112,32 +110,9 @@ const PhoneSignIn = ({ route: { params: { phone } }, otpAuthentication, onOtpRes
                     console.log(error);
                     showMessage({ message: 'Đã có lỗi xảy ra', type: 'danger' });
             }
+        } finally {
+            hideSpinner();
         }
-    }
-
-    function setupEnableResendTimer() {
-        createEnableResendTimer();
-        return closeCurrentEnableResendTimer;
-    }
-
-    function createEnableResendTimer() {
-        enableResendIntervalRef.current = setInterval(() => {
-            setDisallowResend(false);
-            closeCurrentEnableResendTimer();
-        }, ENABLE_RESEND_SECONDS * 1000);
-    }
-
-    function closeCurrentEnableResendTimer() {
-        clearInterval(enableResendIntervalRef.current);
-    }
-
-    function _firebasePhoneSignIn(code) {
-        return otpConfirmation.confirm(code);
-    }
-
-    function _firebasePhoneSignUp(phone) {
-        return auth().signInWithPhoneNumber(phone)
-            .then(otpConfirmation => setOtpConfirmation(otpConfirmation));
     }
 };
 

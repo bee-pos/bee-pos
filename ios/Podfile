@@ -8,6 +8,8 @@ target 'beepos' do
 
   use_react_native!(:path => config["reactNativePath"])
 
+  pod 'RNLocalize', :path => '../node_modules/react-native-localize'
+
   target 'beeposTests' do
     inherit! :complete
     # Pods for testing
