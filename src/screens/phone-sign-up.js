@@ -1,8 +1,10 @@
-import React, { useEffect, useRef, useState } from 'react';
+import { Formik } from 'formik';
+import React, { useEffect, useState } from 'react';
 import { Image, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { showMessage } from "react-native-flash-message";
 import { getCountry } from "react-native-localize";
 import Icon from 'react-native-vector-icons/Ionicons';
+import * as yup from 'yup';
 import HeaderLogo from '../../assets/header-logo.png';
 import Colors from '../utils/colors';
 import countryDialCodes from '../utils/country-dial-codes';
@@ -19,8 +21,12 @@ const PhoneSignUp = ({ onSignedUp }) => {
         flag: require('../../assets/flags/vn.png')
     };
 
+    const initialValues = { phone: '' };
+    const validationSchema = yup.object().shape({
+        phone: yup.string().required('Bạn chưa nhập vào số điện thoại')
+    });
+
     const [countryDialCode, setDialCode] = useState(DEFAULT_COUNTRY_DIAL_CODE);
-    const phone = useRef();
 
     useEffect(() => {
         const countryCode = getCountry();
@@ -35,35 +41,41 @@ const PhoneSignUp = ({ onSignedUp }) => {
             <View style={styles.header}>
                 <Image source={HeaderLogo} height={60} />
             </View>
-            <View style={styles.body}>
-                <Text style={styles['welcome-text']}>Xin chào</Text>
-                <Text style={styles['sign-in-text']}>Bạn đã sẵn sàng chưa, nhập số điện thoại để đăng nhập</Text>
-                <View style={styles['phone-input-container']}>
-                    <Image source={countryDialCode.flag} />
-                    <Text style={styles['phone-input-container__prefix']}>{countryDialCode.dialCode}</Text>
-                    <TextInput style={styles['phone-input-container__input']} onChangeText={onPhoneChanged}
-                        maxLength={11} autoFocus={true} clearButtonMode='always' keyboardType='numeric'
-                        placeholder='Số điện thoại' />
-                </View>
-            </View>
-            <View style={styles.footer}>
-                <TouchableOpacity style={[Styles.cirle, Styles['icon-button']]} onPress={signUp} >
-                    <Icon name='arrow-forward-outline' size={Variables.largeFontSize} color={Colors.white} />
-                </TouchableOpacity>
-            </View>
+            <Formik initialValues={initialValues} validationSchema={validationSchema} onSubmit={signUpWithPhoneNumber}>
+                {({ handleChange, handleSubmit, errors, isValidating, isSubmitting }) => (
+                    <>
+                        <View style={styles.body}>
+                            <Text style={styles['welcome-text']}>Xin chào</Text>
+                            <Text style={styles['sign-in-text']}>Bạn đã sẵn sàng chưa, nhập số điện thoại để đăng nhập</Text>
+                            <View style={styles['phone-input-container']}>
+                                <Image source={countryDialCode.flag} />
+                                <Text style={styles['phone-input-container__prefix']}>{countryDialCode.dialCode}</Text>
+                                <TextInput style={styles['phone-input-container__input']}
+                                    onChangeText={handleChange('phone')}
+                                    maxLength={11} autoFocus={true} clearButtonMode='always'
+                                    keyboardType='numeric' placeholder='Số điện thoại' />
+                            </View>
+                            {errors.phone && <Text style={Styles['text-error']}>{errors.phone}</Text>}
+                        </View>
+                        <View style={styles.footer}>
+                            <TouchableOpacity style={[Styles.cirle, Styles['icon-button']]}
+                                onPress={handleSubmit} disabled={isValidating || isSubmitting} >
+                                <Icon name='arrow-forward-outline' size={Variables.largeFontSize} color={Colors.white} />
+                            </TouchableOpacity>
+                        </View>
+                    </>
+                )}
+            </Formik>
         </View>
     )
 
-    function onPhoneChanged(value) {
-        phone.current = `${countryDialCode.dialCode}${value}`;
-    }
-
-    async function signUp() {
+    async function signUpWithPhoneNumber({ phone }) {
         showSpinner();
 
+        const dialPhone = `${countryDialCode.dialCode}${phone}`;
         try {
-            const otpAuthentication = await firebasePhoneSignUp(phone.current);
-            onSignedUp(phone.current, otpAuthentication);
+            const otpAuthentication = await firebasePhoneSignUp(dialPhone);
+            onSignedUp(dialPhone, otpAuthentication);
         } catch (error) {
             switch (error.code) {
                 case 'auth/missing-phone-number':

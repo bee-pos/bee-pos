@@ -1,14 +1,18 @@
 const grey = 'grey';
 const white = '#fff';
 
-const styledColor = '#e45810';
-const styledBackgroundColor = '#ffd364';
+const primaryColor = '#e45810';
+const primaryBackgroundColor = '#ffd364';
+const errorColor = '#b00020';
+const disabledColor = '#cccccc';
 
 const Colors = {
     grey,
     white,
-    styledColor,
-    styledBackgroundColor
+    primaryColor,
+    primaryBackgroundColor,
+    errorColor,
+    disabledColor
 }
 
 export default Colors;
