@@ -18,7 +18,7 @@ const _Spinner = ({ size }) => {
     }, []);
 
     return (
-        <Spinner visible={show} size={size} color={Colors.styledColor} />
+        <Spinner visible={show} size={size} color={Colors.primaryColor} />
     )
 
     function _srid() {

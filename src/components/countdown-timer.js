@@ -62,7 +62,7 @@ const styles = StyleSheet.create({
 
     },
     'countdown-time': {
-        color: Colors.styledColor
+        color: Colors.primaryColor
     }
 });
 

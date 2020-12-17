@@ -24,9 +24,9 @@ const SignUp = ({ route: { params: { onSignedIn } } }) => {
         </>
     )
 
-    function onSignedUp(phone, otpAuthentication) {
+    function onSignedUp(dialphone, otpAuthentication) {
         setOtpAuthentication(otpAuthentication);
-        navigationRef.current.navigate('PhoneSignIn', { phone });
+        navigationRef.current.navigate('PhoneSignIn', { dialphone });
     }
 }
 
