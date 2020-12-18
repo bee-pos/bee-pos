@@ -8,12 +8,14 @@ import SignUp from './screens/sign-up';
 import SplashScreen from './screens/splash';
 import Spinner from './utils/spinner/spinner-utils';
 import Variables from './utils/variables';
+import UserContext from './context/user-context';
+import AsyncStorage from '@react-native-community/async-storage';
 
 _setupDefaultTextStyle();
 const Stack = createStackNavigator();
 
 const App = () => {
-    const [settingUp, setSettingUp] = useState(false);
+    const [settingUp, setSettingUp] = useState(true);
     const [user, setUser] = useState();
 
     useEffect(() => {
@@ -25,19 +27,17 @@ const App = () => {
             <StatusBar barStyle="light-content" />
             <SafeAreaView style={styles.container}>
                 {settingUp ? <SplashScreen /> :
-                    <NavigationContainer>
-                        <Stack.Navigator>
-                            {user ? (
-                                <>
+                    <UserContext.Provider value={user}>
+                        <NavigationContainer>
+                            <Stack.Navigator>
+                                {user ? (
                                     <Stack.Screen options={{ headerShown: false }} name="Home" component={Home} />
-                                </>
-                            ) : (
-                                <>
+                                ) : (
                                     <Stack.Screen options={{ headerShown: false }} name="SignUp" component={SignUp} initialParams={{ onSignedIn }} />
-                                </>
-                            )}
-                        </Stack.Navigator>
-                    </NavigationContainer>}
+                                )}
+                            </Stack.Navigator>
+                        </NavigationContainer>
+                    </UserContext.Provider>}
             </SafeAreaView>
             <FlashMessage position="top" duration={3000}
                 titleStyle={{ fontSize: Variables.defaultFontSize }} />
@@ -45,14 +45,34 @@ const App = () => {
         </>
     );
 
-    function setup() {
-        setTimeout(() => {
+    async function setup() {
+        try {
+            const user = await _retrieveUser();
+            if (user) {
+                setUser(JSON.parse(user));
+            }
+        } catch (error) {
+
+        } finally {
             setSettingUp(false);
-        }, 3000);
+        }
     }
 
-    function onSignedIn({ user, isNewUser }) {
-        setUser(user);
+    async function onSignedIn({ user, isNewUser }) {
+        try {
+            await _storeUser(user);
+            setUser(user);
+        } catch (error) {
+
+        }
+    }
+
+    function _storeUser(user) {
+        return AsyncStorage.setItem('user', JSON.stringify(user));
+    }
+
+    function _retrieveUser() {
+        return AsyncStorage.getItem('user');
     }
 };
 
