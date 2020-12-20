@@ -1,18 +1,19 @@
 import { Formik } from 'formik';
-import React, { useRef, useState } from 'react';
+import React, { useContext, useRef, useState } from 'react';
 import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { showMessage } from 'react-native-flash-message';
-import Icon from 'react-native-vector-icons/Ionicons';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 import * as yup from 'yup';
 import CoundownTimer from '../components/countdown-timer';
+import UserContext from '../context/user-context';
 import Colors from '../utils/colors';
 import { firebasePhoneSignIn, firebasePhoneSignUp } from '../utils/firebase-utils';
 import { hideSpinner, showSpinner } from '../utils/spinner/spinner-utils';
 import Styles from '../utils/styles';
 import Variables from '../utils/variables';
 
-const PhoneSignIn = ({ route: { params: { dialphone } }, otpAuthentication, onSignedIn }) => {
-    const OTP_EXPIRED_SECONDS = 60;
+const OTP_EXPIRED_SECONDS = 60;
+const PhoneSignin = ({ route: { params: { dialPhone, seconds = OTP_EXPIRED_SECONDS } } }) => {
 
     const initialValues = { otpCode: '' };
     const validationSchema = yup.object().shape({
@@ -21,9 +22,9 @@ const PhoneSignIn = ({ route: { params: { dialphone } }, otpAuthentication, onSi
             .required('Bạn chưa nhập vào mã OTP')
     });
 
-    const coundownTimerRef = useRef();
+    const { signUp, getOtp, signIn } = useContext(UserContext);
 
-    const [otpConfirmation, setOtpConfirmation] = useState(otpAuthentication);
+    const coundownTimerRef = useRef();
     const [otpIsExpired, setOptExpired] = useState(false);
 
     return (
@@ -34,14 +35,14 @@ const PhoneSignIn = ({ route: { params: { dialphone } }, otpAuthentication, onSi
                     <View style={styles.body}>
                         <Text style={styles['confirmed-text']}>Xác nhận</Text>
                         <Text>{`Nhập 6 ký tự được gửi tới số `}</Text>
-                        <Text style={styles['dial-phone-text']}>{dialphone}</Text>
+                        <Text style={styles['dial-phone-text']}>{dialPhone}</Text>
                         <View style={styles['otp-code']}>
                             <TextInput style={styles['otp-code__input']} autoFocus={true} onChangeText={handleChange('otpCode')}
                                 clearButtonMode='always' keyboardType='numeric' placeholder='000000'
                                 maxLength={6} textAlign='left' />
                         </View>
                         <CoundownTimer ref={coundownTimerRef} message='Thời gian còn lại'
-                            seconds={OTP_EXPIRED_SECONDS} onTimeout={onOtpCodeExpired} />
+                            seconds={seconds} onTimeout={onOtpCodeExpired} />
                     </View>
                     <View style={styles.footer}>
                         <View>
@@ -55,7 +56,7 @@ const PhoneSignIn = ({ route: { params: { dialphone } }, otpAuthentication, onSi
                         <TouchableOpacity style={[Styles.cirle, Styles['icon-button'],
                         (otpIsExpired || isValidating || isSubmitting) ? Styles['icon-button--disabled'] : {}]}
                             onPress={handleSubmit} disabled={otpIsExpired || isValidating || isSubmitting}>
-                            <Icon name='arrow-forward-outline' size={Variables.largeFontSize} color={Colors.white} />
+                            <Ionicons name='arrow-forward-outline' size={Variables.mediumFontSize} color={Colors.white} />
                         </TouchableOpacity>
                     </View>
                 </View>
@@ -71,9 +72,8 @@ const PhoneSignIn = ({ route: { params: { dialphone } }, otpAuthentication, onSi
         showSpinner();
 
         try {
-            const { additionalUserInfo: { isNewUser }, user } =
-                await firebasePhoneSignIn(otpConfirmation, otpCode);
-            onSignedIn({ user, isNewUser });
+            const { additionalUserInfo: { isNewUser }, user } = await firebasePhoneSignIn(getOtp(), otpCode);
+            signIn({ user, isNewUser });
         } catch (error) {
             switch (error.code) {
                 case 'auth/missing-verification-code':
@@ -98,10 +98,10 @@ const PhoneSignIn = ({ route: { params: { dialphone } }, otpAuthentication, onSi
         showSpinner();
 
         try {
-            const otpConfirmation = await firebasePhoneSignUp(dialphone);
-            setOtpConfirmation(otpConfirmation);
+            const otpConfirmation = await firebasePhoneSignUp(dialPhone);
+            signUp(dialPhone, otpConfirmation);
 
-            coundownTimerRef.current.onReset();
+            coundownTimerRef.current.reset();
 
             setOptExpired(false);
             showMessage({ message: 'Mã OTP đã được gửi lại', type: 'success' });
@@ -175,4 +175,4 @@ const styles = StyleSheet.create({
     }
 });
 
-export default PhoneSignIn;
+export default PhoneSignin;

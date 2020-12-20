@@ -1,11 +1,13 @@
-const defaultFontSize = 16;
-const mediumFontSize = 22;
-const largeFontSize = 28;
+const smallFontSize = 12;
+const defaultFontSize = 14;
+const mediumFontSize = 18;
+const largeFontSize = 24;
 
 const defaultPadding = 20;
 const defaultMargin = 20;
 
 const Variables = {
+    smallFontSize,
     defaultFontSize,
     mediumFontSize,
     largeFontSize,

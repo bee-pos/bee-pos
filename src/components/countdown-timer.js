@@ -2,21 +2,38 @@ import React, { forwardRef, useEffect, useImperativeHandle, useRef, useState } f
 import { StyleSheet, Text, View } from 'react-native';
 import Colors from '../utils/colors';
 
-const CountdownTimer = forwardRef(({ message, seconds = 0, onTimeout = () => { } }, ref) => {
+const CountdownTimer = forwardRef(({ message, seconds = 0, onTimeout = () => { }, auto = true, display = true }, ref) => {
+    /*
+     * Keep assigned value of setInterval() call to close when unmount component 
+     */
     const countdownIntervalRef = useRef();
+
+    /*
+     * Keep current seconds when counting down
+     */
     const currentSecondsRef = useRef(seconds);
 
+    /*
+     * The seconds to render
+     */
     const [currentSeconds, setCurrentSeconds] = useState(seconds);
 
-    useImperativeHandle(ref, () => ({ onReset }));
+    useImperativeHandle(ref, () => ({ start, getSeconds, reset }));
 
-    useEffect(setupCoundownTimer, []);
+    useEffect(() => {
+        if (auto) {
+            _startCoundownTimer();
+        }
+        return _closeCoundownTimer;
+    }, []);
 
     return (
-        <View style={styles.container}>
-            <Text style={styles.message}>{message} </Text>
-            <Text style={styles['countdown-time']}>{secondsToStr()}</Text>
-        </View>
+        <>
+            {display && <View style={styles.container}>
+                <Text style={styles.message}>{message} </Text>
+                <Text style={styles['countdown-time']}>{secondsToStr()}</Text>
+            </View>}
+        </>
     )
 
     function secondsToStr() {
@@ -26,31 +43,46 @@ const CountdownTimer = forwardRef(({ message, seconds = 0, onTimeout = () => { }
         seconds < 10 ? `0${seconds}` : `${seconds}`].join(' : ');
     }
 
-    function setupCoundownTimer() {
-        _openCoundownTimer();
-        return _closeCoundownTimer;
+    function start() {
+        _startCoundownTimer();
     }
 
-    function onReset() {
+    function reset() {
         _closeCoundownTimer();
-        _openCoundownTimer();
 
         setCurrentSeconds(seconds);
         currentSecondsRef.current = seconds;
+
+        if (auto) {
+            _startCoundownTimer();
+        }
     }
 
-    function _openCoundownTimer() {
+    function getSeconds() {
+        return currentSeconds;
+    }
+
+    function _startCoundownTimer() {
+        if (countdownIntervalRef.current) {
+            return;
+        }
+
+        const startedTime = new Date().getTime();
         countdownIntervalRef.current = setInterval(() => {
-            setCurrentSeconds(--currentSecondsRef.current);
-            if (currentSecondsRef.current == 0) {
+            currentSecondsRef.current = seconds - parseInt((new Date().getTime() - startedTime) / 1000);
+            if (currentSecondsRef.current <= 0) {
+                currentSecondsRef.current = 0;
                 _closeCoundownTimer();
                 onTimeout();
             }
+
+            setCurrentSeconds(currentSecondsRef.current);
         }, 1000);
     }
 
     function _closeCoundownTimer() {
         clearInterval(countdownIntervalRef.current);
+        countdownIntervalRef.current = 0;
     }
 });
 

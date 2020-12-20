@@ -1,19 +1,22 @@
 import { Formik } from 'formik';
-import React, { useEffect, useState } from 'react';
+import React, { useContext, useEffect, useState, useRef } from 'react';
 import { Image, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { showMessage } from "react-native-flash-message";
 import { getCountry } from "react-native-localize";
-import Icon from 'react-native-vector-icons/Ionicons';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 import * as yup from 'yup';
 import HeaderLogo from '../../assets/header-logo.png';
+import UserContext from '../context/user-context';
 import Colors from '../utils/colors';
 import countryDialCodes from '../utils/country-dial-codes';
 import { firebasePhoneSignUp } from '../utils/firebase-utils';
 import { hideSpinner, showSpinner } from '../utils/spinner/spinner-utils';
 import Styles from '../utils/styles';
 import Variables from '../utils/variables';
+import CountdownTimer from '../components/countdown-timer';
 
-const PhoneSignUp = ({ onSignedUp }) => {
+const PhoneSignup = ({ navigation }) => {
+    const OTP_EXPIRED_SECONDS = 60;
     const DEFAULT_COUNTRY_DIAL_CODE = {
         name: "Vietnam",
         dialCode: "+84",
@@ -21,12 +24,17 @@ const PhoneSignUp = ({ onSignedUp }) => {
         flag: require('../../assets/flags/vn.png')
     };
 
+    const { signUp } = useContext(UserContext);
+
     const initialValues = { phone: '' };
     const validationSchema = yup.object().shape({
         phone: yup.string().required('Bạn chưa nhập vào số điện thoại')
     });
 
     const [countryDialCode, setDialCode] = useState(DEFAULT_COUNTRY_DIAL_CODE);
+    const otpIsExpired = useRef(false);
+    const currentSignedUpPhone = useRef();
+    const coundownTimerRef = useRef();
 
     useEffect(() => {
         const countryCode = getCountry();
@@ -41,7 +49,10 @@ const PhoneSignUp = ({ onSignedUp }) => {
             <View style={styles.header}>
                 <Image source={HeaderLogo} height={60} />
             </View>
-            <Formik initialValues={initialValues} validationSchema={validationSchema} onSubmit={signUpWithPhoneNumber}>
+            <CountdownTimer ref={coundownTimerRef} auto={false} display={true} 
+                seconds={OTP_EXPIRED_SECONDS} onTimeout={onOtpExpired} />
+            <Formik initialValues={initialValues} validationSchema={validationSchema} 
+                onSubmit={signUpWithPhoneNumber}>
                 {({ handleChange, handleSubmit, errors, isValidating, isSubmitting }) => (
                     <>
                         <View style={styles.body}>
@@ -55,12 +66,11 @@ const PhoneSignUp = ({ onSignedUp }) => {
                                     maxLength={11} autoFocus={true} clearButtonMode='always'
                                     keyboardType='numeric' placeholder='Số điện thoại' />
                             </View>
-                            {errors.phone && <Text style={Styles['text-error']}>{errors.phone}</Text>}
                         </View>
                         <View style={styles.footer}>
                             <TouchableOpacity style={[Styles.cirle, Styles['icon-button']]}
                                 onPress={handleSubmit} disabled={isValidating || isSubmitting} >
-                                <Icon name='arrow-forward-outline' size={Variables.largeFontSize} color={Colors.white} />
+                                <Ionicons name='arrow-forward-outline' size={Variables.mediumFontSize} color={Colors.white} />
                             </TouchableOpacity>
                         </View>
                     </>
@@ -74,8 +84,20 @@ const PhoneSignUp = ({ onSignedUp }) => {
 
         const dialPhone = `${countryDialCode.dialCode}${phone}`;
         try {
+            if (currentSignedUpPhone.current == phone && !otpIsExpired.current) {
+                navigation.navigate('PhoneSignin', { dialPhone, seconds: coundownTimerRef.current.getSeconds() });
+                return;
+            }
+            
             const otpAuthentication = await firebasePhoneSignUp(dialPhone);
-            onSignedUp(dialPhone, otpAuthentication);
+            otpIsExpired.current = false;
+            currentSignedUpPhone.current = phone;
+            coundownTimerRef.current.reset();
+            coundownTimerRef.current.start();
+
+            signUp(dialPhone, otpAuthentication);
+
+            navigation.navigate('PhoneSignin', { dialPhone, seconds: coundownTimerRef.current.getSeconds() });
         } catch (error) {
             switch (error.code) {
                 case 'auth/missing-phone-number':
@@ -100,6 +122,10 @@ const PhoneSignUp = ({ onSignedUp }) => {
         } finally {
             hideSpinner();
         }
+    }
+
+    function onOtpExpired() {
+        otpIsExpired.current = true;
     }
 };
 
@@ -146,4 +172,4 @@ const styles = StyleSheet.create({
     }
 });
 
-export default PhoneSignUp;
+export default PhoneSignup;

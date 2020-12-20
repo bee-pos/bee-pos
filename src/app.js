@@ -1,22 +1,26 @@
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { SafeAreaView, StatusBar, StyleSheet, Text } from 'react-native';
 import FlashMessage from "react-native-flash-message";
+import AuthProvider from './context/auth-provider';
 import Home from './screens/home';
-import SignUp from './screens/sign-up';
+import PhoneSignin from './screens/phone-signin';
+import PhoneSignup from './screens/phone-signup';
 import SplashScreen from './screens/splash';
+import Signout from './screens/signout';
+import Colors from './utils/colors';
 import Spinner from './utils/spinner/spinner-utils';
 import Variables from './utils/variables';
-import UserContext from './context/user-context';
-import AsyncStorage from '@react-native-community/async-storage';
 
 _setupDefaultTextStyle();
 const Stack = createStackNavigator();
 
 const App = () => {
     const [settingUp, setSettingUp] = useState(true);
-    const [user, setUser] = useState();
+    const [signedIn, setSignedIn] = useState(false);
+
+    const navigationRef = useRef();
 
     useEffect(() => {
         setup();
@@ -24,20 +28,27 @@ const App = () => {
 
     return (
         <>
-            <StatusBar barStyle="light-content" />
+            <StatusBar backgroundColor={Colors.white} barStyle="dark-content" />
             <SafeAreaView style={styles.container}>
                 {settingUp ? <SplashScreen /> :
-                    <UserContext.Provider value={user}>
-                        <NavigationContainer>
+                    <NavigationContainer ref={navigationRef} >
+                        <AuthProvider onSignedIn={onSignedIn} onSignedOut={onSignedOut}>
                             <Stack.Navigator>
-                                {user ? (
-                                    <Stack.Screen options={{ headerShown: false }} name="Home" component={Home} />
+                                {signedIn ? (
+                                    <>
+                                        <Stack.Screen options={{ headerShown: false }} name="Home" component={Home} />
+                                        <Stack.Screen options={{ headerShown: false }} name="SignOut" component={Signout} />
+                                    </>
                                 ) : (
-                                    <Stack.Screen options={{ headerShown: false }} name="SignUp" component={SignUp} initialParams={{ onSignedIn }} />
-                                )}
+                                        <>
+                                            <Stack.Screen options={{ headerShown: false }} name="PhoneSignup" component={PhoneSignup} />
+                                            <Stack.Screen options={{ title: '' }} name="PhoneSignin" component={PhoneSignin} />
+                                        </>
+                                    )}
                             </Stack.Navigator>
-                        </NavigationContainer>
-                    </UserContext.Provider>}
+                        </AuthProvider>
+                    </NavigationContainer>
+                }
             </SafeAreaView>
             <FlashMessage position="top" duration={3000}
                 titleStyle={{ fontSize: Variables.defaultFontSize }} />
@@ -46,33 +57,15 @@ const App = () => {
     );
 
     async function setup() {
-        try {
-            const user = await _retrieveUser();
-            if (user) {
-                setUser(JSON.parse(user));
-            }
-        } catch (error) {
-
-        } finally {
-            setSettingUp(false);
-        }
+        setTimeout(() => setSettingUp(false), 3000);
     }
 
-    async function onSignedIn({ user, isNewUser }) {
-        try {
-            await _storeUser(user);
-            setUser(user);
-        } catch (error) {
-
-        }
+    function onSignedIn() {
+        setSignedIn(true);
     }
 
-    function _storeUser(user) {
-        return AsyncStorage.setItem('user', JSON.stringify(user));
-    }
-
-    function _retrieveUser() {
-        return AsyncStorage.getItem('user');
+    function onSignedOut() {
+        setSignedIn(false);
     }
 };
 
