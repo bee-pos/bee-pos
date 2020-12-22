@@ -42,7 +42,7 @@ const App = () => {
                                 ) : (
                                         <>
                                             <Stack.Screen options={{ headerShown: false }} name="PhoneSignup" component={PhoneSignup} />
-                                            <Stack.Screen options={{ title: '' }} name="PhoneSignin" component={PhoneSignin} />
+                                            <Stack.Screen options={{ headerBackTitleVisible: false, title: '' }} name="PhoneSignin" component={PhoneSignin} />
                                         </>
                                     )}
                             </Stack.Navigator>

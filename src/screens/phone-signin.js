@@ -1,6 +1,6 @@
 import { Formik } from 'formik';
-import React, { useContext, useRef, useState } from 'react';
-import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import React, { useContext, useRef, useState, useLayoutEffect, useEffect } from 'react';
+import { StyleSheet, Button, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { showMessage } from 'react-native-flash-message';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import * as yup from 'yup';
@@ -11,9 +11,10 @@ import { firebasePhoneSignIn, firebasePhoneSignUp } from '../utils/firebase-util
 import { hideSpinner, showSpinner } from '../utils/spinner/spinner-utils';
 import Styles from '../utils/styles';
 import Variables from '../utils/variables';
+import { HeaderBackButton } from '@react-navigation/stack';
 
 const OTP_EXPIRED_SECONDS = 60;
-const PhoneSignin = ({ route: { params: { dialPhone, seconds = OTP_EXPIRED_SECONDS } } }) => {
+const PhoneSignin = ({ navigation, route: { params: { dialPhone } } }) => {
 
     const initialValues = { otpCode: '' };
     const validationSchema = yup.object().shape({
@@ -22,7 +23,7 @@ const PhoneSignin = ({ route: { params: { dialPhone, seconds = OTP_EXPIRED_SECON
             .required('Bạn chưa nhập vào mã OTP')
     });
 
-    const { signUp, getOtp, signIn } = useContext(UserContext);
+    const { signUp, getOtp, getCurrentOtpSeconds, signIn } = useContext(UserContext);
 
     const coundownTimerRef = useRef();
     const [otpIsExpired, setOptExpired] = useState(false);
@@ -37,12 +38,14 @@ const PhoneSignin = ({ route: { params: { dialPhone, seconds = OTP_EXPIRED_SECON
                         <Text>{`Nhập 6 ký tự được gửi tới số `}</Text>
                         <Text style={styles['dial-phone-text']}>{dialPhone}</Text>
                         <View style={styles['otp-code']}>
-                            <TextInput style={styles['otp-code__input']} autoFocus={true} onChangeText={handleChange('otpCode')}
-                                clearButtonMode='always' keyboardType='numeric' placeholder='000000'
+                            <TextInput style={styles['otp-code__input']}
+                                onChangeText={handleChange('otpCode')}
+                                autoFocus={true} clearButtonMode='always'
+                                keyboardType='numeric' placeholder='000000'
                                 maxLength={6} textAlign='left' />
                         </View>
                         <CoundownTimer ref={coundownTimerRef} message='Thời gian còn lại'
-                            seconds={seconds} onTimeout={onOtpCodeExpired} />
+                            seconds={getCurrentOtpSeconds()} onTimeout={onOtpCodeExpired} />
                     </View>
                     <View style={styles.footer}>
                         <View>
@@ -125,6 +128,10 @@ const PhoneSignin = ({ route: { params: { dialPhone, seconds = OTP_EXPIRED_SECON
         } finally {
             hideSpinner();
         }
+    }
+
+    function onBackToSignUp() {
+        navigation.navigate('PhoneSignup', { dialPhone })
     }
 };
 

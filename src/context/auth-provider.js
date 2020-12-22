@@ -2,10 +2,14 @@ import AsyncStorage from '@react-native-community/async-storage';
 import React, { useEffect, useRef, useState } from 'react';
 import UserContext from './user-context';
 
-const AuthProvider = ({ children, onSignedIn, onSignedOut }) => {
+const OTP_EXPIRED_SECONDS = 60;
 
+const AuthProvider = ({ children, onSignedIn, onSignedOut }) => {
+    const otp = useRef();
+    const signedUpTime = useRef(0);
+    const expiredOtp = useRef(true);
+    
     const [currentUser, setCurrentUser] = useState();
-    const otpConfirm = useRef();
 
     useEffect(() => {
         const isSignedIn = async () => {
@@ -23,12 +27,13 @@ const AuthProvider = ({ children, onSignedIn, onSignedOut }) => {
         isSignedIn();
     }, []);
 
-    const signUp = (dialPhone, otp) => {
-        otpConfirm.current = otp;
+    const signUp = (signedUpDialPhone, signedUpOtp) => {
+        otp.current = signedUpOtp;
+        signedUpTime.current = new Date().getTime();
     }
 
     const getOtp = () => {
-        return otpConfirm.current;
+        return otp.current;
     }
 
     const signIn = async ({ user, isNewUser }) => {
@@ -50,18 +55,28 @@ const AuthProvider = ({ children, onSignedIn, onSignedOut }) => {
         }
     }
 
+    const isOtpExpired = () => {
+        return OTP_EXPIRED_SECONDS < parseInt((new Date().getTime() - signedUpTime.current) / 1000);
+    }
+
+    const getCurrentOtpSeconds = () => {
+        const countdownSeconds = OTP_EXPIRED_SECONDS - parseInt((new Date().getTime() - signedUpTime.current) / 1000);
+        return countdownSeconds <= 0 ? 0 : countdownSeconds;
+    }
+
     return (
-        <UserContext.Provider value={{ user: currentUser, signUp, getOtp, signIn, signOut }}>
+        <UserContext.Provider value={{ user: currentUser, signUp, getOtp, 
+            isOtpExpired, getCurrentOtpSeconds, signIn, signOut }}>
             {children}
         </UserContext.Provider>
     )
 
     function _storeUser(user) {
-        return AsyncStorage.setItem('user', JSON.stringify(user));
+        return AsyncStorage.setItem('signedInUser', JSON.stringify(user));
     }
 
     function _retrieveUser() {
-        return AsyncStorage.getItem('user');
+        return AsyncStorage.getItem('signedInUser');
     }
 }
 

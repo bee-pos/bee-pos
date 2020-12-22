@@ -15,42 +15,33 @@ import Styles from '../utils/styles';
 import Variables from '../utils/variables';
 import CountdownTimer from '../components/countdown-timer';
 
+const OTP_EXPIRED_SECONDS = 60;
+const DEFAULT_COUNTRY_DIAL_CODE = {
+    name: "Vietnam",
+    dialCode: "+84",
+    countryCode: "VN",
+    flag: require('../../assets/flags/vn.png')
+};
+
+const initialValues = { phone: '' };
+const validationSchema = yup.object().shape({
+    phone: yup.string().required('Bạn chưa nhập vào số điện thoại')
+});
+
 const PhoneSignup = ({ navigation }) => {
-    const OTP_EXPIRED_SECONDS = 60;
-    const DEFAULT_COUNTRY_DIAL_CODE = {
-        name: "Vietnam",
-        dialCode: "+84",
-        countryCode: "VN",
-        flag: require('../../assets/flags/vn.png')
-    };
-
-    const { signUp } = useContext(UserContext);
-
-    const initialValues = { phone: '' };
-    const validationSchema = yup.object().shape({
-        phone: yup.string().required('Bạn chưa nhập vào số điện thoại')
-    });
+    const signedUpPhone = useRef();
 
     const [countryDialCode, setDialCode] = useState(DEFAULT_COUNTRY_DIAL_CODE);
-    const otpIsExpired = useRef(false);
-    const currentSignedUpPhone = useRef();
-    const coundownTimerRef = useRef();
 
-    useEffect(() => {
-        const countryCode = getCountry();
-        const countryDialCode = countryDialCodes.find(code => code.countryCode === countryCode);
-        if (countryDialCode) {
-            setDialCode(countryDialCode);
-        }
-    }, []);
+    const { signUp, isOtpExpired } = useContext(UserContext);
+
+    useEffect(getDialCodeByDeviceCountryCode, []);
 
     return (
         <View style={styles.container}>
             <View style={styles.header}>
                 <Image source={HeaderLogo} height={60} />
             </View>
-            <CountdownTimer ref={coundownTimerRef} auto={false} display={true} 
-                seconds={OTP_EXPIRED_SECONDS} onTimeout={onOtpExpired} />
             <Formik initialValues={initialValues} validationSchema={validationSchema} 
                 onSubmit={signUpWithPhoneNumber}>
                 {({ handleChange, handleSubmit, errors, isValidating, isSubmitting }) => (
@@ -84,20 +75,18 @@ const PhoneSignup = ({ navigation }) => {
 
         const dialPhone = `${countryDialCode.dialCode}${phone}`;
         try {
-            if (currentSignedUpPhone.current == phone && !otpIsExpired.current) {
-                navigation.navigate('PhoneSignin', { dialPhone, seconds: coundownTimerRef.current.getSeconds() });
+            if (signedUpPhone.current == phone && !isOtpExpired()) {
+                navigation.navigate('PhoneSignin', { dialPhone });
                 return;
             }
             
             const otpAuthentication = await firebasePhoneSignUp(dialPhone);
-            otpIsExpired.current = false;
-            currentSignedUpPhone.current = phone;
-            coundownTimerRef.current.reset();
-            coundownTimerRef.current.start();
+
+            signedUpPhone.current = phone;
 
             signUp(dialPhone, otpAuthentication);
 
-            navigation.navigate('PhoneSignin', { dialPhone, seconds: coundownTimerRef.current.getSeconds() });
+            navigation.navigate('PhoneSignin', { dialPhone });
         } catch (error) {
             switch (error.code) {
                 case 'auth/missing-phone-number':
@@ -124,8 +113,12 @@ const PhoneSignup = ({ navigation }) => {
         }
     }
 
-    function onOtpExpired() {
-        otpIsExpired.current = true;
+    function getDialCodeByDeviceCountryCode() {
+        const deviceCountryCode = getCountry();
+        const dialCode = countryDialCodes.find(code => code.countryCode === deviceCountryCode);
+        if (dialCode) {
+            setDialCode(dialCode);
+        }
     }
 };
 

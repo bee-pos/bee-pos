@@ -14,10 +14,13 @@ const CountdownTimer = forwardRef(({ message, seconds = 0, onTimeout = () => { }
     const currentSecondsRef = useRef(seconds);
 
     /*
-     * The seconds to render
+     * The current countdown seconds to render
      */
     const [currentSeconds, setCurrentSeconds] = useState(seconds);
 
+    /*
+     * Expose functions to control countdown timer
+     */
     useImperativeHandle(ref, () => ({ start, getSeconds, reset }));
 
     useEffect(() => {
@@ -31,17 +34,10 @@ const CountdownTimer = forwardRef(({ message, seconds = 0, onTimeout = () => { }
         <>
             {display && <View style={styles.container}>
                 <Text style={styles.message}>{message} </Text>
-                <Text style={styles['countdown-time']}>{secondsToStr()}</Text>
+                <Text style={styles['countdown-time']}>{secondsToStr(currentSeconds)}</Text>
             </View>}
         </>
     )
-
-    function secondsToStr() {
-        const seconds = currentSeconds % 60;
-        const minutes = (currentSeconds - seconds) / 60;
-        return [minutes < 10 ? `0${minutes}` : `${minutes}`,
-        seconds < 10 ? `0${seconds}` : `${seconds}`].join(' : ');
-    }
 
     function start() {
         _startCoundownTimer();
@@ -81,8 +77,17 @@ const CountdownTimer = forwardRef(({ message, seconds = 0, onTimeout = () => { }
     }
 
     function _closeCoundownTimer() {
-        clearInterval(countdownIntervalRef.current);
-        countdownIntervalRef.current = 0;
+        if (countdownIntervalRef.current) {
+            clearInterval(countdownIntervalRef.current);
+            countdownIntervalRef.current = undefined;
+        }
+    }
+
+    function secondsToStr(numOfSeconds) {
+        const seconds = numOfSeconds % 60;
+        const minutes = (numOfSeconds - seconds) / 60;
+        return [minutes < 10 ? `0${minutes}` : `${minutes}`,
+            seconds < 10 ? `0${seconds}` : `${seconds}`].join(' : ');
     }
 });
 
