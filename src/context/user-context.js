@@ -2,12 +2,13 @@ import { createContext } from 'react';
 
 const UserContext = createContext({
     user: undefined,
-    signUp: () => {},
-    getOtp: () => {},
-    getCurrentOtpSeconds: () => {},
-    isOtpExpired: () => {},
-    signIn: () => {},
-    signOut: () => {}
+    signUp: (dialPhone, otp) => { },
+    getSignedUpDialPhone: () => { },
+    getOtp: () => { },
+    getOtpCountdownSeconds: () => { },
+    isOtpExpired: () => { },
+    signIn: (user, isNewUser) => { },
+    signOut: () => { }
 });
 
 export default UserContext;

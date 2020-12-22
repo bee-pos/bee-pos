@@ -1,6 +1,6 @@
 import { Formik } from 'formik';
-import React, { useContext, useRef, useState, useLayoutEffect, useEffect } from 'react';
-import { StyleSheet, Button, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import React, { useContext, useRef, useState } from 'react';
+import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { showMessage } from 'react-native-flash-message';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import * as yup from 'yup';
@@ -11,22 +11,21 @@ import { firebasePhoneSignIn, firebasePhoneSignUp } from '../utils/firebase-util
 import { hideSpinner, showSpinner } from '../utils/spinner/spinner-utils';
 import Styles from '../utils/styles';
 import Variables from '../utils/variables';
-import { HeaderBackButton } from '@react-navigation/stack';
 
-const OTP_EXPIRED_SECONDS = 60;
+const initialValues = { otpCode: '' };
+const validationSchema = yup.object().shape({
+    otpCode: yup.string()
+        .min(6, 'Mã OTP không chính xác')
+        .required('Bạn chưa nhập vào mã OTP')
+});
+
 const PhoneSignin = ({ navigation, route: { params: { dialPhone } } }) => {
-
-    const initialValues = { otpCode: '' };
-    const validationSchema = yup.object().shape({
-        otpCode: yup.string()
-            .min(6, 'Mã OTP không chính xác')
-            .required('Bạn chưa nhập vào mã OTP')
-    });
-
-    const { signUp, getOtp, getCurrentOtpSeconds, signIn } = useContext(UserContext);
-
     const coundownTimerRef = useRef();
-    const [otpIsExpired, setOptExpired] = useState(false);
+    const { signUp, getOtp, getOtpCountdownSeconds, signIn } = useContext(UserContext);
+
+    const [expiredOtp, setExpiredOtp] = useState(false);
+    const [countdownSeconds, setCountdownSeconds] = useState(getOtpCountdownSeconds());
+
 
     return (
         <Formik initialValues={initialValues} validationSchema={validationSchema} onSubmit={signInByOtpCode}
@@ -45,20 +44,20 @@ const PhoneSignin = ({ navigation, route: { params: { dialPhone } } }) => {
                                 maxLength={6} textAlign='left' />
                         </View>
                         <CoundownTimer ref={coundownTimerRef} message='Thời gian còn lại'
-                            seconds={getCurrentOtpSeconds()} onTimeout={onOtpCodeExpired} />
+                            seconds={countdownSeconds} onTimeout={onOtpCodeExpired} />
                     </View>
                     <View style={styles.footer}>
                         <View>
                             <Text>Bạn không nhận được mã kích hoạt?</Text>
-                            <TouchableOpacity disabled={!otpIsExpired} onPress={resendOtpCode} >
-                                <Text style={[styles['re-send-btn'], !otpIsExpired ? styles['re-send-btn--disabled'] : '']} >
+                            <TouchableOpacity disabled={!expiredOtp} onPress={resendOtpCode} >
+                                <Text style={[styles['re-send-btn'], expiredOtp ? '' : styles['re-send-btn--disabled']]} >
                                     Gửi lại mã kích hoạt
                                 </Text>
                             </TouchableOpacity>
                         </View>
                         <TouchableOpacity style={[Styles.cirle, Styles['icon-button'],
-                        (otpIsExpired || isValidating || isSubmitting) ? Styles['icon-button--disabled'] : {}]}
-                            onPress={handleSubmit} disabled={otpIsExpired || isValidating || isSubmitting}>
+                        (expiredOtp || isValidating || isSubmitting) ? Styles['icon-button--disabled'] : {}]}
+                            onPress={handleSubmit} disabled={expiredOtp || isValidating || isSubmitting}>
                             <Ionicons name='arrow-forward-outline' size={Variables.mediumFontSize} color={Colors.white} />
                         </TouchableOpacity>
                     </View>
@@ -68,7 +67,7 @@ const PhoneSignin = ({ navigation, route: { params: { dialPhone } } }) => {
     )
 
     function onOtpCodeExpired() {
-        setOptExpired(true);
+        setExpiredOtp(true);
     }
 
     async function signInByOtpCode({ otpCode }) {
@@ -76,7 +75,7 @@ const PhoneSignin = ({ navigation, route: { params: { dialPhone } } }) => {
 
         try {
             const { additionalUserInfo: { isNewUser }, user } = await firebasePhoneSignIn(getOtp(), otpCode);
-            signIn({ user, isNewUser });
+            signIn(user, isNewUser);
         } catch (error) {
             switch (error.code) {
                 case 'auth/missing-verification-code':
@@ -105,8 +104,9 @@ const PhoneSignin = ({ navigation, route: { params: { dialPhone } } }) => {
             signUp(dialPhone, otpConfirmation);
 
             coundownTimerRef.current.reset();
+            setCountdownSeconds(getOtpCountdownSeconds());
 
-            setOptExpired(false);
+            setExpiredOtp(false);
             showMessage({ message: 'Mã OTP đã được gửi lại', type: 'success' });
         } catch (error) {
             switch (error.code) {

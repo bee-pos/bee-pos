@@ -1,5 +1,5 @@
 import { Formik } from 'formik';
-import React, { useContext, useEffect, useState, useRef } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import { Image, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { showMessage } from "react-native-flash-message";
 import { getCountry } from "react-native-localize";
@@ -13,9 +13,7 @@ import { firebasePhoneSignUp } from '../utils/firebase-utils';
 import { hideSpinner, showSpinner } from '../utils/spinner/spinner-utils';
 import Styles from '../utils/styles';
 import Variables from '../utils/variables';
-import CountdownTimer from '../components/countdown-timer';
 
-const OTP_EXPIRED_SECONDS = 60;
 const DEFAULT_COUNTRY_DIAL_CODE = {
     name: "Vietnam",
     dialCode: "+84",
@@ -29,11 +27,9 @@ const validationSchema = yup.object().shape({
 });
 
 const PhoneSignup = ({ navigation }) => {
-    const signedUpPhone = useRef();
-
     const [countryDialCode, setDialCode] = useState(DEFAULT_COUNTRY_DIAL_CODE);
 
-    const { signUp, isOtpExpired } = useContext(UserContext);
+    const { signUp, getSignedUpDialPhone, isOtpExpired } = useContext(UserContext);
 
     useEffect(getDialCodeByDeviceCountryCode, []);
 
@@ -42,7 +38,7 @@ const PhoneSignup = ({ navigation }) => {
             <View style={styles.header}>
                 <Image source={HeaderLogo} height={60} />
             </View>
-            <Formik initialValues={initialValues} validationSchema={validationSchema} 
+            <Formik initialValues={initialValues} validationSchema={validationSchema}
                 onSubmit={signUpWithPhoneNumber}>
                 {({ handleChange, handleSubmit, errors, isValidating, isSubmitting }) => (
                     <>
@@ -75,17 +71,15 @@ const PhoneSignup = ({ navigation }) => {
 
         const dialPhone = `${countryDialCode.dialCode}${phone}`;
         try {
-            if (signedUpPhone.current == phone && !isOtpExpired()) {
+            const currentSignedUpDialPhone = getSignedUpDialPhone();
+            if (currentSignedUpDialPhone === dialPhone && !isOtpExpired()) {
                 navigation.navigate('PhoneSignin', { dialPhone });
                 return;
             }
-            
+
             const otpAuthentication = await firebasePhoneSignUp(dialPhone);
 
-            signedUpPhone.current = phone;
-
             signUp(dialPhone, otpAuthentication);
-
             navigation.navigate('PhoneSignin', { dialPhone });
         } catch (error) {
             switch (error.code) {
