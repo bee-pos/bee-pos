@@ -26,7 +26,6 @@ const PhoneSignin = ({ navigation, route: { params: { dialPhone } } }) => {
     const [expiredOtp, setExpiredOtp] = useState(false);
     const [countdownSeconds, setCountdownSeconds] = useState(getOtpCountdownSeconds());
 
-
     return (
         <Formik initialValues={initialValues} validationSchema={validationSchema} onSubmit={signInByOtpCode}
             validateOnBlur={false} validateOnChange={false}>
@@ -103,8 +102,8 @@ const PhoneSignin = ({ navigation, route: { params: { dialPhone } } }) => {
             const otpConfirmation = await firebasePhoneSignUp(dialPhone);
             signUp(dialPhone, otpConfirmation);
 
-            coundownTimerRef.current.reset();
             setCountdownSeconds(getOtpCountdownSeconds());
+            coundownTimerRef.current.reset();
 
             setExpiredOtp(false);
             showMessage({ message: 'Mã OTP đã được gửi lại', type: 'success' });

@@ -4,7 +4,7 @@ import Colors from '../utils/colors';
 
 const CountdownTimer = forwardRef(({ message, seconds = 0, onTimeout = () => { }, auto = true, display = true }, ref) => {
     /*
-     * Keep assigned value of setInterval() call to close when unmount component 
+     * Keep assigned value of setInterval() call to clear interval when unmount component 
      */
     const countdownIntervalRef = useRef();
 
@@ -21,7 +21,7 @@ const CountdownTimer = forwardRef(({ message, seconds = 0, onTimeout = () => { }
     /*
      * Expose functions to control countdown timer
      */
-    useImperativeHandle(ref, () => ({ start, getSeconds, reset }));
+    useImperativeHandle(ref, () => ({ start, reset }));
 
     useEffect(() => {
         if (auto) {
@@ -52,10 +52,6 @@ const CountdownTimer = forwardRef(({ message, seconds = 0, onTimeout = () => { }
         if (auto) {
             _startCoundownTimer();
         }
-    }
-
-    function getSeconds() {
-        return currentSeconds;
     }
 
     function _startCoundownTimer() {
