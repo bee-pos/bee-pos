@@ -1,4 +1,5 @@
 import Colors from './colors';
+import Variables from './variables';
 
 const Styles = {
     anchor: {
@@ -24,6 +25,7 @@ const Styles = {
         backgroundColor: Colors.disabledColor
     },
     'text-error': {
+        fontSize: Variables.smallFontSize,
         color: Colors.errorColor
     }
 }
