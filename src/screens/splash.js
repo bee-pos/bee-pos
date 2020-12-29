@@ -1,17 +1,19 @@
 import React from 'react';
-import { Image, StyleSheet, View } from 'react-native';
-import Logo from '../../assets/sync-logo.png';
+import { StatusBar, StyleSheet, View } from 'react-native';
 import AnimatedTextEllipsis from '../components/animated-text-ellipsis';
+import Logo from '../components/logo';
 import Colors from '../utils/colors';
 import Variables from '../utils/variables';
 
 const SplashScreen = () => {
     return (
-        <View style={styles.container}>
-            <Image source={Logo} />
-            <AnimatedTextEllipsis style={styles.message} textStyle={styles.message__text} 
-                text="Đang đồng bộ dữ liệu, chờ chút xíu bạn nhé" />
-        </View>
+        <>
+            <StatusBar backgroundColor={Colors.primaryBackgroundColor} barStyle="dark-content" />
+            <View style={styles.container}>
+                <Logo />
+                <AnimatedTextEllipsis style={styles.message} textStyle={styles.message__text} text="Đồng bộ dữ liệu" />
+            </View>
+        </>
     )
 }
 

@@ -1,11 +1,12 @@
 import { Formik } from 'formik';
-import React, { useEffect, useState } from 'react';
-import { Image, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import React, { useContext, useEffect, useState } from 'react';
+import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { showMessage } from "react-native-flash-message";
 import { getCountry } from "react-native-localize";
-import Icon from 'react-native-vector-icons/Ionicons';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 import * as yup from 'yup';
-import HeaderLogo from '../../assets/header-logo.png';
+import Logo from '../components/logo';
+import UserContext from '../context/user-context';
 import Colors from '../utils/colors';
 import countryDialCodes from '../utils/country-dial-codes';
 import { firebasePhoneSignUp } from '../utils/firebase-utils';
@@ -13,35 +14,32 @@ import { hideSpinner, showSpinner } from '../utils/spinner/spinner-utils';
 import Styles from '../utils/styles';
 import Variables from '../utils/variables';
 
-const PhoneSignUp = ({ onSignedUp }) => {
-    const DEFAULT_COUNTRY_DIAL_CODE = {
-        name: "Vietnam",
-        dialCode: "+84",
-        countryCode: "VN",
-        flag: require('../../assets/flags/vn.png')
-    };
+const DEFAULT_COUNTRY_DIAL_CODE = {
+    name: "Vietnam",
+    dialCode: "+84",
+    countryCode: "VN",
+    flag: require('../../assets/flags/vn.png')
+};
 
-    const initialValues = { phone: '' };
-    const validationSchema = yup.object().shape({
-        phone: yup.string().required('Bạn chưa nhập vào số điện thoại')
-    });
+const initialValues = { phone: '' };
+const validationSchema = yup.object().shape({
+    phone: yup.string().required('Bạn chưa nhập vào số điện thoại')
+});
 
+const PhoneSignup = ({ navigation }) => {
     const [countryDialCode, setDialCode] = useState(DEFAULT_COUNTRY_DIAL_CODE);
 
-    useEffect(() => {
-        const countryCode = getCountry();
-        const countryDialCode = countryDialCodes.find(code => code.countryCode === countryCode);
-        if (countryDialCode) {
-            setDialCode(countryDialCode);
-        }
-    }, []);
+    const { signUp, getSignedUpDialPhone, isOtpExpired } = useContext(UserContext);
+
+    useEffect(getDialCodeByDeviceCountryCode, []);
 
     return (
         <View style={styles.container}>
             <View style={styles.header}>
-                <Image source={HeaderLogo} height={64} />
+                <Logo size={64} />
             </View>
-            <Formik initialValues={initialValues} validationSchema={validationSchema} onSubmit={signUpWithPhoneNumber}>
+            <Formik initialValues={initialValues} validationSchema={validationSchema}
+                onSubmit={signUpWithPhoneNumber}>
                 {({ handleChange, handleSubmit, errors, isValidating, isSubmitting }) => (
                     <>
                         <View style={styles.body}>
@@ -59,7 +57,7 @@ const PhoneSignUp = ({ onSignedUp }) => {
                         <View style={styles.footer}>
                             <TouchableOpacity style={[Styles.cirle, Styles['icon-button']]}
                                 onPress={handleSubmit} disabled={isValidating || isSubmitting} >
-                                <Icon name='arrow-forward-outline' size={Variables.largeFontSize} color={Colors.white} />
+                                <Ionicons name='arrow-forward-outline' size={Variables.mediumFontSize} color={Colors.white} />
                             </TouchableOpacity>
                         </View>
                     </>
@@ -73,8 +71,16 @@ const PhoneSignUp = ({ onSignedUp }) => {
 
         const dialPhone = `${countryDialCode.dialCode}${phone}`;
         try {
+            const currentSignedUpDialPhone = getSignedUpDialPhone();
+            if (currentSignedUpDialPhone === dialPhone && !isOtpExpired()) {
+                navigation.navigate('PhoneSignin', { dialPhone });
+                return;
+            }
+
             const otpAuthentication = await firebasePhoneSignUp(dialPhone);
-            onSignedUp(dialPhone, otpAuthentication);
+
+            signUp(dialPhone, otpAuthentication);
+            navigation.navigate('PhoneSignin', { dialPhone });
         } catch (error) {
             switch (error.code) {
                 case 'auth/missing-phone-number':
@@ -100,6 +106,14 @@ const PhoneSignUp = ({ onSignedUp }) => {
             hideSpinner();
         }
     }
+
+    function getDialCodeByDeviceCountryCode() {
+        const deviceCountryCode = getCountry();
+        const dialCode = countryDialCodes.find(code => code.countryCode === deviceCountryCode);
+        if (dialCode) {
+            setDialCode(dialCode);
+        }
+    }
 };
 
 const styles = StyleSheet.create({
@@ -108,8 +122,10 @@ const styles = StyleSheet.create({
         backgroundColor: Colors.white
     },
     header: {
+        justifyContent: 'center',
         height: 80,
-        padding: Variables.defaultPadding
+        paddingLeft: Variables.defaultPadding,
+        paddingRight: Variables.defaultPadding
     },
     body: {
         flex: 1,
@@ -150,4 +166,4 @@ const styles = StyleSheet.create({
     }
 });
 
-export default PhoneSignUp;
+export default PhoneSignup;
