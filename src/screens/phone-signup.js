@@ -1,6 +1,6 @@
 import { Formik } from 'formik';
 import React, { useContext, useEffect, useState } from 'react';
-import { Image, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { showMessage } from "react-native-flash-message";
 import { getCountry } from "react-native-localize";
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -36,8 +36,6 @@ const PhoneSignup = ({ navigation }) => {
     return (
         <View style={styles.container}>
             <View style={styles.header}>
-                {/* <Image source={HeaderLogo} height={60} /> */}
-                {/* <Text style={styles['header__logo']}>BEE</Text> */}
                 <Logo size={64} />
             </View>
             <Formik initialValues={initialValues} validationSchema={validationSchema}
@@ -47,10 +45,10 @@ const PhoneSignup = ({ navigation }) => {
                         <View style={styles.body}>
                             <Text style={styles['welcome-text']}>Xin chào</Text>
                             <Text style={styles['sign-in-text']}>Bạn đã sẵn sàng chưa, nhập số điện thoại để đăng nhập</Text>
-                            <View style={styles['phone-input-container']}>
-                                <Image source={countryDialCode.flag} />
-                                <Text style={styles['phone-input-container__prefix']}>{countryDialCode.dialCode}</Text>
-                                <TextInput style={styles['phone-input-container__input']}
+                            <View style={styles['phone-input']}>
+                                <Text style={styles['phone-input__country-code']}>{countryDialCode.countryCode}</Text>
+                                <Text style={styles['phone-input__prefix']}>{countryDialCode.dialCode}</Text>
+                                <TextInput style={styles['phone-input__input']}
                                     onChangeText={handleChange('phone')}
                                     maxLength={11} autoFocus={true} clearButtonMode='always'
                                     keyboardType='numeric' placeholder='Số điện thoại' />
@@ -140,18 +138,23 @@ const styles = StyleSheet.create({
     'sign-in-text': {
 
     },
-    'phone-input-container': {
+    'phone-input': {
         flexDirection: 'row',
         alignItems: 'center',
         paddingTop: 40
     },
-    'phone-input-container__prefix': {
-        fontWeight: 'bold',
-        paddingLeft: 10
+    'phone-input__country-code': {
+
     },
-    'phone-input-container__input': {
+    'phone-input__prefix': {
+        fontWeight: 'bold',
+        marginLeft: 4
+    },
+    'phone-input__input': {
+        flex: 1,
+        color: Colors.primaryColor,
         fontSize: Variables.mediumFontSize,
-        paddingLeft: 10
+        marginLeft: 4
     },
     footer: {
         position: 'absolute',

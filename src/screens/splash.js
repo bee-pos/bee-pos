@@ -28,7 +28,7 @@ const styles = StyleSheet.create({
         marginTop: Variables.defaultMargin
     },
     message__text: {
-
+        fontSize: Variables.smallFontSize,
     }
 })
 
