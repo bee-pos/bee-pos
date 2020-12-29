@@ -1,9 +1,9 @@
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import AnimatedTextEllipsis from '../components/animated-text-ellipsis';
+import Logo from '../components/logo';
 import Colors from '../utils/colors';
 import Variables from '../utils/variables';
-import Logo from '../components/logo';
 
 const SplashScreen = () => {
     return (
