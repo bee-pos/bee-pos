@@ -1,5 +1,5 @@
 import React from 'react';
-import { Image, StatusBar, StyleSheet, View } from 'react-native';
+import { StatusBar, StyleSheet, View } from 'react-native';
 import Logo from '../../assets/logo.png';
 import AnimatedTextEllipsis from '../components/animated-text-ellipsis';
 import Colors from '../utils/colors';
@@ -10,7 +10,7 @@ const SplashScreen = () => {
         <>
             <StatusBar backgroundColor={Colors.primaryBackgroundColor} barStyle="dark-content" />
             <View style={styles.container}>
-                <Image source={Logo} />
+                <Logo />
                 <AnimatedTextEllipsis style={styles.message} textStyle={styles.message__text} text="Đồng bộ dữ liệu" />
             </View>
         </>
