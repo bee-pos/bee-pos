@@ -5,7 +5,7 @@ import { showMessage } from "react-native-flash-message";
 import { getCountry } from "react-native-localize";
 import Icon from 'react-native-vector-icons/Ionicons';
 import * as yup from 'yup';
-import HeaderLogo from '../../assets/header-logo.png';
+import Logo from '../components/logo';
 import Colors from '../utils/colors';
 import countryDialCodes from '../utils/country-dial-codes';
 import { firebasePhoneSignUp } from '../utils/firebase-utils';
@@ -39,7 +39,9 @@ const PhoneSignUp = ({ onSignedUp }) => {
     return (
         <View style={styles.container}>
             <View style={styles.header}>
-                <Image source={HeaderLogo} height={60} />
+                {/* <Image source={HeaderLogo} height={60} /> */}
+                {/* <Text style={styles['header__logo']}>BEE</Text> */}
+                <Logo size={64} />
             </View>
             <Formik initialValues={initialValues} validationSchema={validationSchema} onSubmit={signUpWithPhoneNumber}>
                 {({ handleChange, handleSubmit, errors, isValidating, isSubmitting }) => (
@@ -109,8 +111,10 @@ const styles = StyleSheet.create({
         backgroundColor: Colors.white
     },
     header: {
+        justifyContent: 'center',
         height: 80,
-        padding: Variables.defaultPadding
+        paddingLeft: Variables.defaultPadding,
+        paddingRight: Variables.defaultPadding
     },
     body: {
         flex: 1,
